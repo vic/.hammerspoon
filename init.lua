@@ -1,3 +1,5 @@
+require('utils.drawBorder')
+
 bindings                     = require('bindings')
 --controlplane                 = require('utils.controlplane')
 notify                       = require('utils.notify')

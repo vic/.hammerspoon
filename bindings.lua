@@ -32,15 +32,59 @@ local doWin = function(fn, options)
 end
 
 module.start = function()
-  local ultra = { 'ctrl', 'cmd', 'alt' }
-  local bind  = function(key, action) hs.hotkey.bind(ultra, key, action) end
+  local combo = { 'ctrl', 'cmd' }
+  local ultra = { 'shift', 'ctrl', 'alt', 'cmd' }
+  local bind  = function(km, key, action) hs.hotkey.bind(km, key, action) end
+
+  local modal = hs.hotkey.modal.new(combo, 'space')
+  function modal:entered() hs.alert.show( "Window manager active", 999999 ) end
+  function modal:exited() hs.alert.closeAll() end
+
+  function modal_exit (fn)
+    return function ()
+      modal:exit()
+      return fn()
+    end
+  end
 
   hs.hotkey.bind({ 'alt' }, 'tab', window.windowHints)
 
-  hs.grid.setGrid('8x6').setMargins({ x = 4, y = 4 })
+  hs.grid.HINTS = {
+    {'1', '2', '3', '4'},
+    {'q', 'w', 'e', 'r'},
+    {'u', 'i', 'o', 'p'},
+    {'h', 'j', 'k', 'l'},
+    {'n', 'm', ',', '/'}}
+
+  hs.grid.setGrid('4x3').setMargins({ x = 0, y = 0 })
+
+  local expose = hs.expose.new(nil)
+
+
+  hs.fnutils.each({
+      { key = 'escape' },
+      { key = 'return' },
+      { key = 'space', fn = function () expose:toggleShow() end },
+
+
+  },function (object)
+      modal:bind('', object.key, modal_exit(doWin(object.fn, object.args)))
+  end)
+
+  hs.fnutils.each({
+      { key = 'g', fn = hs.grid.show },
+
+      { key = 'h', fn = hs.window.focusWindowWest },
+      { key = 'j', fn = hs.window.focusWindowSouth },
+      { key = 'k', fn = hs.window.focusWindowNorth },
+      { key = 'l', fn = hs.window.focusWindowEast },
+   },function (object)
+     bind(combo, object.key, doWin(object.fn, object.args))
+  end)
 
   hs.fnutils.each({
     { key = 'f', fn = window.fullscreen, args = { allowFullscreen = true } },
+    { key = 'g', fn = hs.grid.show                                         },
     { key = 'z', fn = hs.grid.maximizeWindow                               },
     { key = 'n', fn = hs.grid.pushWindowNextScreen                         },
     { key = 'p', fn = hs.grid.pushWindowPrevScreen                         },
@@ -55,7 +99,7 @@ module.start = function()
     { key = 'u', fn = window.persistPosition, args ='undo'                 },
     { key = 'r', fn = window.persistPosition, args ='redo'                 }
   }, function(object)
-    bind(object.key, doWin(object.fn, object.args))
+    bind(ultra, object.key, doWin(object.fn, object.args))
   end)
 
   hs.fnutils.each({
@@ -63,7 +107,7 @@ module.start = function()
     { key = 'escape', fn = hs.caffeinate.systemSleep },
     { key = 'tab',    fn = window.windowHints        }
   }, function(object)
-    bind(object.key, object.fn)
+    bind(ultra, object.key, object.fn)
   end)
 
   hs.fnutils.each({
@@ -71,7 +115,7 @@ module.start = function()
     { key = 'b', apps = { 'Safari', 'Google Chrome'                } },
     { key = 'm', apps = { 'Messages', 'FaceTime', 'Slack', 'Skype' } }
   }, function(object)
-    bind(object.key, function() smartLaunchOrFocus(object.apps) end)
+    bind(ultra, object.key, function() smartLaunchOrFocus(object.apps) end)
   end)
 
   hs.fnutils.each({
@@ -87,7 +131,7 @@ module.start = function()
     { key = '8', geom = { x = 0, y = 1, w = 4, h = 4 } },
     { key = '9', geom = { x = 4, y = 1, w = 4, h = 4 } }
   }, function(object)
-    bind(object.key, doWin(hs.grid.set, object.geom))
+    bind(ultra, object.key, doWin(hs.grid.set, object.geom))
   end)
 
 end
